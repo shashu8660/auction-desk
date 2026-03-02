@@ -23,6 +23,8 @@ export default function AdminPage() {
   const [overrideBid, setOverrideBid] = useState("")
   const [overrideTeamId, setOverrideTeamId] = useState("")
 
+  const [previewImage, setPreviewImage] = useState(null)
+
   // 🔐 Admin Check
   const checkAdmin = async () => {
     const { data: userData } = await supabase.auth.getUser()
@@ -50,7 +52,15 @@ export default function AdminPage() {
     const { data: playersData } = await supabase
       .from("players")
       .select(`
-        *,
+        id,
+        name,
+        role,
+        status,
+        base_price,
+        sold_price,
+        team_id,
+        image,
+        player_number,
         teams (
           name,
           owner_name
@@ -280,9 +290,9 @@ export default function AdminPage() {
   }
 
   const filteredPlayers = players.filter((player) => {
-    const matchesSearch = player.name
-      .toLowerCase()
-      .includes(search.toLowerCase())
+    const matchesSearch =
+      player.name.toLowerCase().includes(search.toLowerCase()) ||
+      String(player.player_number || "").includes(search)
 
     const matchesRole =
       roleFilter === "all" || player.role === roleFilter
@@ -508,11 +518,15 @@ export default function AdminPage() {
                 <img
                   src={player.image}
                   alt={player.name}
-                  className="w-16 h-16 object-cover rounded-lg border border-gray-600"
+                  onClick={() => setPreviewImage(player.image)}
+                  className="w-16 h-16 object-cover rounded-lg border border-gray-600 cursor-pointer hover:scale-105 transition"
                 />
               )}
 
               <div>
+                <p className="text-yellow-400 font-bold text-lg">
+                  #{player.player_number ?? "N/A"}
+                </p>
                 <p className="text-lg font-semibold">
                   {player.name}
                 </p>
@@ -641,6 +655,19 @@ export default function AdminPage() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {previewImage && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50"
+          onClick={() => setPreviewImage(null)}
+        >
+          <img
+            src={previewImage}
+            alt="Preview"
+            className="max-h-[90vh] max-w-[90vw] rounded-xl shadow-2xl"
+          />
         </div>
       )}
 
