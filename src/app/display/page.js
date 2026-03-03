@@ -209,7 +209,7 @@ export default function DisplayPage() {
           </div>
 
           <div className="mt-6">
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
               {teamSquad.map(player => {
                 const isRetained = player.status === "retained"
 
@@ -227,7 +227,8 @@ export default function DisplayPage() {
                       <img
                         src={player.image}
                         alt={player.name}
-                        className={`w-24 h-24 mx-auto rounded-xl object-cover mb-3
+                        onClick={() => setPreviewImage(player.image)}
+                        className={`w-28 h-28 mx-auto rounded-xl object-cover mb-3 cursor-pointer transition-transform duration-300 hover:scale-105
                           ${isRetained ? "border-4 border-white" : "border border-gray-700"}`}
                       />
                     )}
@@ -251,6 +252,20 @@ export default function DisplayPage() {
             </div>
           </div>
 
+        </div>
+      )}
+
+      {previewImage && (
+        <div
+          className="fixed inset-0 bg-black/95 flex items-center justify-center z-[9999] p-4"
+          onClick={() => setPreviewImage(null)}
+        >
+          <img
+            src={previewImage}
+            alt="Preview"
+            onClick={(e) => e.stopPropagation()}
+            className="max-h-[95vh] max-w-[95vw] rounded-2xl shadow-2xl"
+          />
         </div>
       )}
 
