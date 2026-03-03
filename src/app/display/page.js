@@ -209,17 +209,17 @@ export default function DisplayPage() {
           </div>
 
           <div className="mt-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
               {teamSquad.map(player => {
                 const isRetained = player.status === "retained"
 
                 return (
                   <div
                     key={player.id}
-                    className={`rounded-2xl p-4 text-center transition-all duration-300 shadow-lg
+                    className={`rounded-xl p-2 text-center transition-all duration-300
                       ${isRetained
-                        ? "bg-gradient-to-br from-yellow-500 to-yellow-400 text-black scale-105"
-                        : "bg-gray-900 border border-gray-700 hover:border-gray-500"
+                        ? "bg-yellow-500 text-black"
+                        : "bg-gray-900 border border-gray-700"
                       }
                     `}
                   >
@@ -228,21 +228,21 @@ export default function DisplayPage() {
                         src={player.image}
                         alt={player.name}
                         onClick={() => setPreviewImage(player.image)}
-                        className={`w-28 h-28 mx-auto rounded-xl object-cover mb-3 cursor-pointer transition-transform duration-300 hover:scale-105
+                        className={`w-16 h-16 mx-auto rounded-lg object-cover mb-2 cursor-pointer transition-transform duration-200 hover:scale-105
                           ${isRetained ? "border-4 border-white" : "border border-gray-700"}`}
                       />
                     )}
 
-                    <p className="font-bold text-sm uppercase tracking-wide">
+                    <p className="font-semibold text-[11px] leading-tight uppercase">
                       {player.name}
                     </p>
 
-                    <p className={`text-xs mt-1 ${isRetained ? "text-black/80" : "text-gray-400"}`}>
+                    <p className={`text-[10px] mt-1 ${isRetained ? "text-black/80" : "text-gray-400"}`}>
                       ₹{player.sold_price}
                     </p>
 
                     {isRetained && (
-                      <div className="mt-2 text-xs font-bold bg-black text-yellow-400 px-2 py-1 rounded-full inline-block">
+                      <div className="mt-1 text-[9px] font-bold bg-black text-yellow-400 px-2 py-[2px] rounded-full inline-block">
                         RETAINED
                       </div>
                     )}
