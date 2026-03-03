@@ -158,7 +158,7 @@ export default function DisplayPage() {
             >Close</button>
           </div>
 
-          <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl p-4 mb-4 border border-yellow-500 shadow-lg">
+          <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-lg p-3 mb-3 border border-yellow-500 shadow-md">
 
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
 
@@ -189,18 +189,18 @@ export default function DisplayPage() {
                     .map(p => (
                       <div
                         key={p.id}
-                        className="flex items-center gap-3 bg-yellow-500 text-black px-3 py-2 rounded-xl text-xs font-semibold shadow-md"
+                        className="flex items-center gap-3 bg-gray-800 border border-yellow-400 px-3 py-2 rounded-lg text-xs shadow-sm"
                       >
                         {p.image && (
                           <img
                             src={p.image}
                             onClick={() => setPreviewImage(p.image)}
-                            className="w-12 h-12 rounded-lg object-cover border-2 border-black cursor-pointer hover:scale-105 transition"
+                            className="w-16 h-16 rounded-full object-cover border-2 border-yellow-400 cursor-pointer hover:scale-105 transition"
                           />
                         )}
                         <div>
-                          <p className="leading-tight font-bold text-[12px]">{p.name}</p>
-                          <p className="text-[11px] font-bold">₹{p.sold_price}</p>
+                          <p className="text-sm font-semibold text-white">{p.name}</p>
+                          <p className="text-xs text-yellow-400 font-semibold">₹{p.sold_price}</p>
                         </div>
                       </div>
                     ))}
