@@ -156,7 +156,7 @@ export default function DisplayPage() {
             >Close</button>
           </div>
 
-          <div className="bg-gray-900 rounded-xl p-4 mb-6 border border-gray-700">
+          <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 mb-6 border border-yellow-500 shadow-xl">
 
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
 
@@ -208,24 +208,47 @@ export default function DisplayPage() {
 
           </div>
 
-          <div className="space-y-3">
-            {teamSquad.map(player => (
-              <div
-                key={player.id}
-                className="bg-gray-800 p-3 rounded-lg flex items-center gap-3 border border-gray-700"
-              >
-                {player.image && (
-                  <img
-                    src={player.image}
-                    className="w-12 h-12 object-cover rounded-md"
-                  />
-                )}
-                <div>
-                  <p className="font-semibold text-sm">{player.name}</p>
-                  <p className="text-xs text-gray-400">₹{player.sold_price}</p>
-                </div>
-              </div>
-            ))}
+          <div className="mt-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-5">
+              {teamSquad.map(player => {
+                const isRetained = player.status === "retained"
+
+                return (
+                  <div
+                    key={player.id}
+                    className={`rounded-2xl p-4 text-center transition-all duration-300 shadow-lg
+                      ${isRetained
+                        ? "bg-gradient-to-br from-yellow-500 to-yellow-400 text-black scale-105"
+                        : "bg-gray-900 border border-gray-700 hover:border-gray-500"
+                      }
+                    `}
+                  >
+                    {player.image && (
+                      <img
+                        src={player.image}
+                        alt={player.name}
+                        className={`w-24 h-24 mx-auto rounded-xl object-cover mb-3
+                          ${isRetained ? "border-4 border-white" : "border border-gray-700"}`}
+                      />
+                    )}
+
+                    <p className="font-bold text-sm uppercase tracking-wide">
+                      {player.name}
+                    </p>
+
+                    <p className={`text-xs mt-1 ${isRetained ? "text-black/80" : "text-gray-400"}`}>
+                      ₹{player.sold_price}
+                    </p>
+
+                    {isRetained && (
+                      <div className="mt-2 text-xs font-bold bg-black text-yellow-400 px-2 py-1 rounded-full inline-block">
+                        RETAINED
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
           </div>
 
         </div>
