@@ -146,7 +146,9 @@ export default function DisplayPage() {
         <div className="fixed inset-0 bg-black/95 p-4 overflow-y-auto z-50">
 
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold">{selectedTeam.name}</h2>
+            <h2 className="text-xl font-bold px-4 py-1 rounded-lg bg-gradient-to-r from-yellow-500 to-yellow-400 text-black shadow-lg">
+              {selectedTeam.name}
+            </h2>
             <button
               onClick={() => {
                 setSelectedTeam(null)
@@ -156,7 +158,7 @@ export default function DisplayPage() {
             >Close</button>
           </div>
 
-          <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 mb-6 border border-yellow-500 shadow-xl">
+          <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl p-4 mb-4 border border-yellow-500 shadow-lg">
 
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
 
@@ -171,36 +173,33 @@ export default function DisplayPage() {
                 <div>
                   <p className="text-xs text-gray-400 uppercase tracking-wide">Owner</p>
                   <p className="text-lg font-semibold">{selectedTeam.owner_name}</p>
-                </div>
-              </div>
 
-              {/* Retained Players Section */}
-              <div>
-                <p className="text-xs text-gray-400 uppercase tracking-wide mb-2">
-                  Retained Players
-                </p>
+                  {/* Retained Players Section */}
+                  <p className="text-xs text-gray-400 uppercase tracking-wide mt-4 mb-2">
+                    Retained Players
+                  </p>
 
-                <div className="flex flex-wrap gap-3">
-                  {teamSquad
-                    .filter(p => p.status === "retained")
-                    .map(p => (
-                      <div
-                        key={p.id}
-                        className="flex items-center gap-2 bg-yellow-500 text-black px-3 py-1 rounded-full text-xs font-semibold shadow-md"
-                      >
-                        {p.image && (
-                          <img
-                            src={p.image}
-                            className="w-6 h-6 rounded-full object-cover"
-                          />
-                        )}
-                        <span>{p.name}</span>
-                      </div>
-                    ))}
-
-                  {teamSquad.filter(p => p.status === "retained").length === 0 && (
-                    <p className="text-gray-500 text-xs">No retained players</p>
-                  )}
+                  <div className="grid grid-cols-2 gap-2">
+                    {teamSquad
+                      .filter(p => p.status === "retained")
+                      .map(p => (
+                        <div
+                          key={p.id}
+                          className="flex items-center gap-2 bg-yellow-500 text-black px-2 py-1 rounded-lg text-[10px] font-semibold shadow-sm"
+                        >
+                          {p.image && (
+                            <img
+                              src={p.image}
+                              className="w-8 h-8 rounded-md object-cover border border-black"
+                            />
+                          )}
+                          <div>
+                            <p className="leading-tight">{p.name}</p>
+                            <p className="text-[9px] font-bold">₹{p.sold_price}</p>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
                 </div>
               </div>
 
@@ -209,8 +208,8 @@ export default function DisplayPage() {
           </div>
 
           <div className="mt-6">
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
-              {teamSquad.map(player => {
+            <div className="grid grid-cols-4 gap-3">
+              {teamSquad.filter(p => p.status !== "retained").map(player => {
                 const isRetained = player.status === "retained"
 
                 return (
