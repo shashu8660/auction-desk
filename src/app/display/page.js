@@ -26,15 +26,29 @@ export default function DisplayPage() {
     { t1: 1, t2: 2 },
     { t1: 3, t2: 4 },
     { t1: 1, t2: 3 },
-    { t1: 2, t2: 4 }
+    { t1: 2, t2: 4 },
+    { t1: 1, t2: 4 },
+    { t1: 2, t2: 3 }
   ]
 
   const poolBMatches = [
     { t1: 5, t2: 6 },
     { t1: 7, t2: 8 },
     { t1: 5, t2: 7 },
-    { t1: 6, t2: 8 }
+    { t1: 6, t2: 8 },
+    { t1: 5, t2: 8 },
+    { t1: 6, t2: 7 }
   ]
+
+  const semiFinalMatches = [
+    { label: "POOL A #1", vs: "POOL B #1" },
+    { label: "POOL A #2", vs: "POOL B #2" }
+  ]
+
+  const finalMatch = {
+    label: "WINNER SEMI 1",
+    vs: "WINNER SEMI 2"
+  }
 
   const fetchData = async () => {
     const { data: teamsData } = await supabase
@@ -246,6 +260,73 @@ export default function DisplayPage() {
 
               </div>
             ))}
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* SEMI FINALS */}
+      <div className="mt-12">
+
+        <div className="bg-gradient-to-r from-purple-600 to-pink-500 text-white text-center py-2 rounded-lg font-bold tracking-widest shadow-lg mb-4">
+          🏆 SEMI FINALS
+        </div>
+
+        <div className="grid gap-4">
+          {semiFinalMatches.map((match, i) => (
+            <div
+              key={i}
+              className="bg-gray-900 border border-purple-500 rounded-xl p-4 flex items-center justify-between shadow-md"
+            >
+
+              <div className="text-left w-5/12">
+                <p className="text-sm font-semibold uppercase">
+                  {match.label}
+                </p>
+              </div>
+
+              <div className="text-center w-2/12">
+                <p className="text-purple-400 font-bold text-sm">SEMI {i + 1}</p>
+                <p className="text-lg font-bold">VS</p>
+              </div>
+
+              <div className="text-right w-5/12">
+                <p className="text-sm font-semibold uppercase">
+                  {match.vs}
+                </p>
+              </div>
+
+            </div>
+          ))}
+        </div>
+
+      </div>
+
+      {/* FINAL */}
+      <div className="mt-12">
+
+        <div className="bg-gradient-to-r from-red-600 to-yellow-500 text-white text-center py-2 rounded-lg font-bold tracking-widest shadow-lg mb-4">
+          🏆 GRAND FINAL
+        </div>
+
+        <div className="bg-gray-900 border border-yellow-500 rounded-xl p-4 flex items-center justify-between shadow-md">
+
+          <div className="text-left w-5/12">
+            <p className="text-sm font-semibold uppercase">
+              {finalMatch.label}
+            </p>
+          </div>
+
+          <div className="text-center w-2/12">
+            <p className="text-yellow-400 font-bold text-sm">FINAL</p>
+            <p className="text-lg font-bold">VS</p>
+          </div>
+
+          <div className="text-right w-5/12">
+            <p className="text-sm font-semibold uppercase">
+              {finalMatch.vs}
+            </p>
           </div>
 
         </div>
