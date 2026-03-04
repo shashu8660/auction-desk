@@ -7,7 +7,34 @@ export default function DisplayPage() {
   const [teams, setTeams] = useState([])
   const [selectedTeam, setSelectedTeam] = useState(null)
   const [teamSquad, setTeamSquad] = useState([])
+
   const [previewImage, setPreviewImage] = useState(null)
+
+  // Team map and match schedules
+  const teamMap = {
+    1: "Karkada Royals Nellibettu",
+    2: "Pari Friends Badaholi",
+    3: "Ajay Cricket club Kunjigudi",
+    4: "Black Panthers Karakadas",
+    5: "SS Super Kings",
+    6: "Aparna Eleven Cricket",
+    7: "SD Cricketers Karkada",
+    8: "Girija Road Lines Attackers"
+  }
+
+  const poolAMatches = [
+    { t1: 1, t2: 2 },
+    { t1: 3, t2: 4 },
+    { t1: 1, t2: 3 },
+    { t1: 2, t2: 4 }
+  ]
+
+  const poolBMatches = [
+    { t1: 5, t2: 6 },
+    { t1: 7, t2: 8 },
+    { t1: 5, t2: 7 },
+    { t1: 6, t2: 8 }
+  ]
 
   const fetchData = async () => {
     const { data: teamsData } = await supabase
@@ -139,6 +166,90 @@ export default function DisplayPage() {
               <p className="font-semibold text-sm">{team.name}</p>
             </div>
           ))}
+      </div>
+
+      {/* MATCH SCHEDULE */}
+
+      <div className="mt-12">
+
+        <h2 className="text-3xl font-bold text-center mb-8 tracking-wide">
+          🏏 TOURNAMENT FIXTURES
+        </h2>
+
+        {/* Pool A Section */}
+        <div className="mb-10">
+
+          <div className="bg-gradient-to-r from-yellow-600 to-yellow-400 text-black text-center py-2 rounded-lg font-bold tracking-widest shadow-lg mb-4">
+            🅰️ POOL A FIXTURES
+          </div>
+
+          <div className="grid gap-4">
+            {poolAMatches.map((match, i) => (
+              <div
+                key={i}
+                className="bg-gray-900 border border-yellow-500 rounded-xl p-4 flex items-center justify-between shadow-md"
+              >
+
+                <div className="text-left w-5/12">
+                  <p className="text-sm font-semibold uppercase">
+                    {teamMap[match.t1]}
+                  </p>
+                </div>
+
+                <div className="text-center w-2/12">
+                  <p className="text-yellow-400 font-bold text-sm">MATCH {i + 1}</p>
+                  <p className="text-lg font-bold">VS</p>
+                </div>
+
+                <div className="text-right w-5/12">
+                  <p className="text-sm font-semibold uppercase">
+                    {teamMap[match.t2]}
+                  </p>
+                </div>
+
+              </div>
+            ))}
+          </div>
+
+        </div>
+
+        {/* Pool B Section */}
+        <div>
+
+          <div className="bg-gradient-to-r from-blue-600 to-blue-400 text-white text-center py-2 rounded-lg font-bold tracking-widest shadow-lg mb-4">
+            🅱️ POOL B FIXTURES
+          </div>
+
+          <div className="grid gap-4">
+            {poolBMatches.map((match, i) => (
+              <div
+                key={i}
+                className="bg-gray-900 border border-blue-500 rounded-xl p-4 flex items-center justify-between shadow-md"
+              >
+
+                <div className="text-left w-5/12">
+                  <p className="text-sm font-semibold uppercase">
+                    {teamMap[match.t1]}
+                  </p>
+                </div>
+
+                <div className="text-center w-2/12">
+                  <p className="text-blue-400 font-bold text-sm">MATCH {i + 1}</p>
+                  <p className="text-lg font-bold">VS</p>
+                </div>
+
+                <div className="text-right w-5/12">
+                  <p className="text-sm font-semibold uppercase">
+                    {teamMap[match.t2]}
+                  </p>
+                </div>
+
+              </div>
+            ))}
+          </div>
+
+        </div>
+
       </div>
 
       {/* Selected Team Squad Popup */}
