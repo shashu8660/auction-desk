@@ -41,8 +41,8 @@ export default function DisplayPage() {
   ]
 
   const semiFinalMatches = [
-    { label: "POOL A #1", vs: "POOL B #1" },
-    { label: "POOL A #2", vs: "POOL B #2" }
+    { label: "POOL A - TOP 2 TEAMS", vs: "LOTS" },
+    { label: "POOL B - TOP 2 TEAMS", vs: "LOTS" }
   ]
 
   const finalMatch = {
@@ -190,49 +190,51 @@ export default function DisplayPage() {
           🏏 TOURNAMENT FIXTURES
         </h2>
 
-        {/* Pool A Section */}
-        <div className="mb-10">
+      {/* Pool A Section */}
+      <div className="mb-10">
 
-          <div className="bg-gradient-to-r from-yellow-600 to-yellow-400 text-black text-center py-2 rounded-lg font-bold tracking-widest shadow-lg mb-4">
-            🅰️ POOL A FIXTURES • SATURDAY
-          </div>
-
-          <div className="grid gap-4">
-            {poolAMatches.map((match, i) => (
-              <div
-                key={i}
-                className="bg-gray-900 border border-yellow-500 rounded-xl p-4 flex items-center justify-between shadow-md"
-              >
-
-                <div className="text-left w-5/12">
-                  <p className="text-sm font-semibold uppercase">
-                    {teamMap[match.t1]}
-                  </p>
-                </div>
-
-                <div className="text-center w-2/12">
-                  <p className="text-yellow-400 font-bold text-sm">MATCH {i + 1}</p>
-                  <p className="text-xs text-gray-400">{match.time}</p>
-                  <p className="text-lg font-bold">VS</p>
-                </div>
-
-                <div className="text-right w-5/12">
-                  <p className="text-sm font-semibold uppercase">
-                    {teamMap[match.t2]}
-                  </p>
-                </div>
-
-              </div>
-            ))}
-          </div>
-
+        <div className="bg-gradient-to-r from-yellow-600 to-yellow-400 text-black text-center py-2 rounded-lg font-bold tracking-widest shadow-lg mb-4">
+          🅰️ POOL A FIXTURES
         </div>
+
+        <div className="grid gap-4">
+          {poolAMatches.map((match, i) => (
+            <div
+              key={i}
+              className="bg-gray-900 border border-yellow-500 rounded-xl p-4 flex items-center justify-between shadow-md"
+            >
+
+              <div className="text-left w-5/12">
+                <p className="text-sm font-semibold uppercase">
+                  {teamMap[match.t1]}
+                </p>
+              </div>
+
+              <div className="text-center w-2/12">
+                <p className="text-yellow-400 font-bold text-sm">MATCH {i + 1}</p>
+                {/* Highlighted match time for Pool A fixtures */}
+                {/* <p className="text-xs text-gray-400">{match.time}</p> */}
+                <p className="text-sm font-bold bg-yellow-400 text-black px-3 py-[3px] rounded shadow">{match.time}</p>
+                <p className="text-lg font-bold">VS</p>
+              </div>
+
+              <div className="text-right w-5/12">
+                <p className="text-sm font-semibold uppercase">
+                  {teamMap[match.t2]}
+                </p>
+              </div>
+
+            </div>
+          ))}
+        </div>
+
+      </div>
 
         {/* Pool B Section */}
         <div>
 
           <div className="bg-gradient-to-r from-blue-600 to-blue-400 text-white text-center py-2 rounded-lg font-bold tracking-widest shadow-lg mb-4">
-            🅱️ POOL B FIXTURES • SUNDAY
+            🅱️ POOL B FIXTURES
           </div>
 
           <div className="grid gap-4">
@@ -250,7 +252,9 @@ export default function DisplayPage() {
 
                 <div className="text-center w-2/12">
                   <p className="text-blue-400 font-bold text-sm">MATCH {i + 1}</p>
-                  <p className="text-xs text-gray-400">{match.time}</p>
+                  {/* Highlighted match time for Pool B fixtures */}
+                  {/* <p className="text-xs text-gray-400">{match.time}</p> */}
+                  <p className="text-sm font-bold bg-blue-500 text-white px-3 py-[3px] rounded shadow">{match.time}</p>
                   <p className="text-lg font-bold">VS</p>
                 </div>
 
@@ -272,7 +276,7 @@ export default function DisplayPage() {
       <div className="mt-12">
 
         <div className="bg-gradient-to-r from-purple-600 to-pink-500 text-white text-center py-2 rounded-lg font-bold tracking-widest shadow-lg mb-4">
-          🏆 SEMI FINALS • LOTS
+          🏆 SEMI FINALS • <span className="bg-yellow-400 text-black px-2 py-1 rounded">LOTS</span>
         </div>
 
         <div className="grid gap-4">
