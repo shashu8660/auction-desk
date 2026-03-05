@@ -23,21 +23,21 @@ export default function DisplayPage() {
   }
 
   const poolAMatches = [
-    { t1: 1, t2: 2 },
-    { t1: 3, t2: 4 },
-    { t1: 1, t2: 3 },
-    { t1: 2, t2: 4 },
-    { t1: 1, t2: 4 },
-    { t1: 2, t2: 3 }
+    { t1: 1, t2: 2, time: "8:30 AM" },
+    { t1: 3, t2: 4, time: "9:30 AM" },
+    { t1: 1, t2: 3, time: "10:30 AM" },
+    { t1: 2, t2: 4, time: "11:30 AM" },
+    { t1: 1, t2: 4, time: "12:30 PM" },
+    { t1: 2, t2: 3, time: "1:30 PM" }
   ]
 
   const poolBMatches = [
-    { t1: 5, t2: 6 },
-    { t1: 7, t2: 8 },
-    { t1: 5, t2: 7 },
-    { t1: 6, t2: 8 },
-    { t1: 5, t2: 8 },
-    { t1: 6, t2: 7 }
+    { t1: 5, t2: 6, time: "7:30 AM" },
+    { t1: 7, t2: 8, time: "8:30 AM" },
+    { t1: 5, t2: 7, time: "9:30 AM" },
+    { t1: 6, t2: 8, time: "10:30 AM" },
+    { t1: 5, t2: 8, time: "11:30 AM" },
+    { t1: 6, t2: 7, time: "12:30 PM" }
   ]
 
   const semiFinalMatches = [
@@ -194,7 +194,7 @@ export default function DisplayPage() {
         <div className="mb-10">
 
           <div className="bg-gradient-to-r from-yellow-600 to-yellow-400 text-black text-center py-2 rounded-lg font-bold tracking-widest shadow-lg mb-4">
-            🅰️ POOL A FIXTURES
+            🅰️ POOL A FIXTURES • SATURDAY
           </div>
 
           <div className="grid gap-4">
@@ -212,6 +212,7 @@ export default function DisplayPage() {
 
                 <div className="text-center w-2/12">
                   <p className="text-yellow-400 font-bold text-sm">MATCH {i + 1}</p>
+                  <p className="text-xs text-gray-400">{match.time}</p>
                   <p className="text-lg font-bold">VS</p>
                 </div>
 
@@ -231,7 +232,7 @@ export default function DisplayPage() {
         <div>
 
           <div className="bg-gradient-to-r from-blue-600 to-blue-400 text-white text-center py-2 rounded-lg font-bold tracking-widest shadow-lg mb-4">
-            🅱️ POOL B FIXTURES
+            🅱️ POOL B FIXTURES • SUNDAY
           </div>
 
           <div className="grid gap-4">
@@ -249,6 +250,7 @@ export default function DisplayPage() {
 
                 <div className="text-center w-2/12">
                   <p className="text-blue-400 font-bold text-sm">MATCH {i + 1}</p>
+                  <p className="text-xs text-gray-400">{match.time}</p>
                   <p className="text-lg font-bold">VS</p>
                 </div>
 
@@ -270,7 +272,7 @@ export default function DisplayPage() {
       <div className="mt-12">
 
         <div className="bg-gradient-to-r from-purple-600 to-pink-500 text-white text-center py-2 rounded-lg font-bold tracking-widest shadow-lg mb-4">
-          🏆 SEMI FINALS
+          🏆 SEMI FINALS • LOTS
         </div>
 
         <div className="grid gap-4">
