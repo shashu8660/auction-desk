@@ -194,7 +194,10 @@ export default function DisplayPage() {
       <div className="mb-10">
 
         <div className="bg-gradient-to-r from-yellow-600 to-yellow-400 text-black text-center py-2 rounded-lg font-bold tracking-widest shadow-lg mb-4">
-          🅰️ POOL A FIXTURES
+          🅰️ POOL A FIXTURES • 
+          <span className="bg-black text-yellow-300 px-2 py-1 rounded ml-2">
+            SATURDAY • 14 MARCH
+          </span>
         </div>
 
         <div className="grid gap-4">
@@ -234,7 +237,10 @@ export default function DisplayPage() {
         <div>
 
           <div className="bg-gradient-to-r from-blue-600 to-blue-400 text-white text-center py-2 rounded-lg font-bold tracking-widest shadow-lg mb-4">
-            🅱️ POOL B FIXTURES
+            🅱️ POOL B FIXTURES • 
+            <span className="bg-white text-blue-700 px-2 py-1 rounded ml-2">
+              SUNDAY • 15 MARCH
+            </span>
           </div>
 
           <div className="grid gap-4">
@@ -299,7 +305,9 @@ export default function DisplayPage() {
 
               <div className="text-right w-5/12">
                 <p className="text-sm font-semibold uppercase">
-                  {match.vs}
+                  <span className="bg-yellow-400 text-black px-2 py-1 rounded">
+                    {match.vs}
+                  </span>
                 </p>
               </div>
 
