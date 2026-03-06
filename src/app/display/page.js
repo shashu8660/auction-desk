@@ -289,7 +289,7 @@ export default function DisplayPage() {
           🏆 SEMI FINALS • <span className="bg-yellow-400 text-black px-2 py-1 rounded">LOTS</span>
         </div>
         <div className="text-center text-sm text-yellow-300 mb-4 font-semibold">
-          (TOP 4 TEAMS LOTS)
+          ( TOP 4 TEAMS SEMI LOTS )
         </div>
 
         <div className="grid gap-4">
@@ -299,7 +299,6 @@ export default function DisplayPage() {
               className="bg-gray-900 border border-purple-500 rounded-xl p-4 flex items-center justify-center shadow-md"
             >
               <div className="text-center">
-                <p className="text-purple-400 font-bold text-sm mb-1">SEMI {i + 1}</p>
                 <p className="text-sm font-semibold uppercase">
                   {match.label}
                 </p>
