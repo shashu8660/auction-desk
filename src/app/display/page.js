@@ -41,8 +41,8 @@ export default function DisplayPage() {
   ]
 
   const semiFinalMatches = [
-    { label: "POOL A - TOP 2 TEAMS", vs: "LOTS" },
-    { label: "POOL B - TOP 2 TEAMS", vs: "LOTS" }
+    { label: "Pool A - TOP 2 Teams"},
+    { label: "Pool B - TOP 2 Teams"}
   ]
 
   const finalMatch = {
@@ -288,33 +288,22 @@ export default function DisplayPage() {
         <div className="bg-gradient-to-r from-purple-600 to-pink-500 text-white text-center py-2 rounded-lg font-bold tracking-widest shadow-lg mb-4">
           🏆 SEMI FINALS • <span className="bg-yellow-400 text-black px-2 py-1 rounded">LOTS</span>
         </div>
+        <div className="text-center text-sm text-yellow-300 mb-4 font-semibold">
+          (TOP 4 TEAMS LOTS)
+        </div>
 
         <div className="grid gap-4">
           {semiFinalMatches.map((match, i) => (
             <div
               key={i}
-              className="bg-gray-900 border border-purple-500 rounded-xl p-4 flex items-center justify-between shadow-md"
+              className="bg-gray-900 border border-purple-500 rounded-xl p-4 flex items-center justify-center shadow-md"
             >
-
-              <div className="text-left w-5/12">
+              <div className="text-center">
+                <p className="text-purple-400 font-bold text-sm mb-1">SEMI {i + 1}</p>
                 <p className="text-sm font-semibold uppercase">
                   {match.label}
                 </p>
               </div>
-
-              <div className="text-center w-2/12">
-                <p className="text-purple-400 font-bold text-sm">SEMI {i + 1}</p>
-                <p className="text-lg font-bold">VS</p>
-              </div>
-
-              <div className="text-right w-5/12">
-                <p className="text-sm font-semibold uppercase">
-                  <span className="bg-yellow-400 text-black px-2 py-1 rounded">
-                    {match.vs}
-                  </span>
-                </p>
-              </div>
-
             </div>
           ))}
         </div>
