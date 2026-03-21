@@ -5,467 +5,416 @@ import { supabase } from "../../lib/supabase"
 
 export default function DisplayPage() {
   const [teams, setTeams] = useState([])
+  const [activeTeamId, setActiveTeamId] = useState(null)
+  const [view, setView] = useState("overview") // overview | players | teams
+  const [players, setPlayers] = useState([])
   const [selectedTeam, setSelectedTeam] = useState(null)
-  const [teamSquad, setTeamSquad] = useState([])
+  const [fullscreenImage, setFullscreenImage] = useState(null)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [roleFilter, setRoleFilter] = useState("all")
+  const [statusFilter, setStatusFilter] = useState("all")
 
-  const [previewImage, setPreviewImage] = useState(null)
-
-  // Team map and match schedules
-  const teamMap = {
-    1: "Karkada Royals Nellibettu",
-    2: "Pari Friends Badaholi",
-    3: "Ajay Cricket club Kunjigudi",
-    4: "Black Panthers Karakadas",
-    5: "SS Super Kings",
-    6: "Aparna Eleven Cricket",
-    7: "SD Cricketers Karkada",
-    8: "Girija Road Lines Attackers"
+  const fetchTeams = async () => {
+    const { data } = await supabase.from("teams").select("*")
+    setTeams(data || [])
   }
 
-  const poolAMatches = [
-    { t1: 1, t2: 2, time: "8:30 AM" },
-    { t1: 3, t2: 4, time: "9:30 AM" },
-    { t1: 1, t2: 3, time: "10:30 AM" },
-    { t1: 2, t2: 4, time: "11:30 AM" },
-    { t1: 1, t2: 4, time: "12:30 PM" },
-    { t1: 2, t2: 3, time: "1:30 PM" }
-  ]
-
-  const poolBMatches = [
-    { t1: 5, t2: 6, time: "7:30 AM" },
-    { t1: 7, t2: 8, time: "8:30 AM" },
-    { t1: 5, t2: 7, time: "9:30 AM" },
-    { t1: 6, t2: 8, time: "10:30 AM" },
-    { t1: 5, t2: 8, time: "11:30 AM" },
-    { t1: 6, t2: 7, time: "12:30 PM" }
-  ]
-
-  const semiFinalMatches = [
-    { label: "Pool A - TOP 2 Teams"},
-    { label: "Pool B - TOP 2 Teams"}
-  ]
-
-  const finalMatch = {
-    label: "WINNER SEMI 1",
-    vs: "WINNER SEMI 2"
-  }
-
-  const fetchData = async () => {
-    const { data: teamsData } = await supabase
-      .from("teams")
-      .select("*")
-
-    setTeams(teamsData || [])
-  }
-
-  const fetchTeamSquad = async (teamId) => {
+  const fetchPlayers = async () => {
     const { data } = await supabase
       .from("players")
       .select("*")
-      .eq("team_id", teamId)
-      .in("status", ["sold", "retained"])
-      .order("sold_price", { ascending: false })
-
-    setTeamSquad(data || [])
+    setPlayers(data || [])
   }
 
   useEffect(() => {
-    fetchData()
+    fetchTeams()
+    fetchPlayers()
 
-    const channel = supabase
-      .channel("auction-display")
+    const teamChannel = supabase
+      .channel("teams-live")
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "teams" },
-        fetchData
+        fetchTeams
       )
+      .subscribe()
+
+    const playerChannel = supabase
+      .channel("players-live")
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "players" },
-        fetchData
+        fetchPlayers
       )
       .subscribe()
 
     return () => {
-      supabase.removeChannel(channel)
+      supabase.removeChannel(teamChannel)
+      supabase.removeChannel(playerChannel)
     }
   }, [])
 
+  const getRemainingSlots = (teamId, maxPlayers) => {
+    const count = players.filter(p => p.team_id === teamId).length
+    return maxPlayers ? maxPlayers - count : '--'
+  }
+
+  const getPlayerCount = (teamId) => {
+    return players.filter(p => p.team_id === teamId).length
+  }
+
   return (
-    <div className="min-h-screen bg-black text-white p-4">
+    <div className="min-h-screen relative text-white p-6 overflow-hidden">
 
-      <h1 className="text-3xl font-bold text-center mb-6">
-        🏆 TEAM SQUADS
-      </h1>
+      {/* BACKGROUND */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#0b0f2a] via-[#111633] to-black"></div>
 
-      {/* Pool A */}
-      <div className="mb-4">
-        <div className="bg-gradient-to-r from-yellow-600 to-yellow-400 text-black text-center py-2 rounded-lg font-bold tracking-widest shadow-lg">
-          🅰️ POOL A
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-4 mb-8">
-        {teams
-          .filter(team =>
-            [
-              "Pari Friends Badaholi",
-              "Black Panthers Karakadas",
-              "Karkada Royals Nellibettu",
-              "Ajay Cricket club Kunjigudi"
-            ].includes(team.name)
-          )
-          .map(team => (
-            <div
-              key={team.id}
-              onClick={() => {
-                if (selectedTeam?.id === team.id) {
-                  setSelectedTeam(null)
-                  setTeamSquad([])
-                } else {
-                  setSelectedTeam(team)
-                  fetchTeamSquad(team.id)
-                }
-              }}
-              className="bg-gray-900 p-4 rounded-xl border border-yellow-500 text-center hover:bg-yellow-500/10 transition-all duration-300"
-            >
-              {team.logo_url && (
-                <img
-                  src={team.logo_url}
-                  alt={team.name}
-                  className="h-12 mx-auto mb-2"
-                />
-              )}
-              <p className="font-semibold text-sm">{team.name}</p>
-            </div>
-          ))}
-      </div>
+      <div className="relative z-10">
 
-      {/* Pool B */}
-      <div className="mb-4 mt-6">
-        <div className="bg-gradient-to-r from-blue-600 to-blue-400 text-white text-center py-2 rounded-lg font-bold tracking-widest shadow-lg">
-          🅱️ POOL B
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-4 mb-8">
-        {teams
-          .filter(team =>
-            [
-              "Aparna Eleven Cricket",
-              "SS Super Kings",
-              "SD Cricketers Karkada",
-              "Girija Road Lines Attackers"
-            ].includes(team.name)
-          )
-          .map(team => (
-            <div
-              key={team.id}
-              onClick={() => {
-                if (selectedTeam?.id === team.id) {
-                  setSelectedTeam(null)
-                  setTeamSquad([])
-                } else {
-                  setSelectedTeam(team)
-                  fetchTeamSquad(team.id)
-                }
-              }}
-              className="bg-gray-900 p-4 rounded-xl border border-blue-500 text-center hover:bg-blue-500/10 transition-all duration-300"
-            >
-              {team.logo_url && (
-                <img
-                  src={team.logo_url}
-                  alt={team.name}
-                  className="h-12 mx-auto mb-2"
-                />
-              )}
-              <p className="font-semibold text-sm">{team.name}</p>
-            </div>
-          ))}
-      </div>
-
-      {/* MATCH SCHEDULE */}
-
-      <div className="mt-12">
-
-        <h2 className="text-3xl font-bold text-center mb-8 tracking-wide">
-          🏏 TOURNAMENT FIXTURES
-        </h2>
-
-      {/* Pool A Section */}
-      <div className="mb-10">
-
-        <div className="bg-gradient-to-r from-yellow-600 to-yellow-400 text-black text-center py-3 rounded-lg font-bold tracking-widest shadow-lg mb-4">
-          <div>🅰️ POOL A FIXTURES</div>
-          <div className="mt-1">
-            <span className="bg-black text-yellow-300 px-3 py-1 rounded text-sm">
-              SATURDAY • 14 MARCH
-            </span>
-          </div>
+        {/* HEADER */}
+        <div className="text-center mb-6">
+          <h1 className="text-3xl font-bold tracking-widest text-yellow-400 animate-pulse">
+            🏏 LIVE AUCTION
+          </h1>
         </div>
 
-        <div className="grid gap-4">
-          {poolAMatches.map((match, i) => (
-            <div
-              key={i}
-              className="bg-gray-900 border border-yellow-500 rounded-xl p-4 flex items-center justify-between shadow-md"
-            >
+        {/* AUCTION AREA */}
+        <div className="bg-[#0e1435] rounded-xl p-6 shadow-lg mb-6">
 
-              <div className="text-left w-5/12">
-                <p className="text-sm font-semibold uppercase">
-                  {teamMap[match.t1]}
-                </p>
-              </div>
-
-              <div className="text-center w-2/12">
-                <p className="text-yellow-400 font-bold text-sm">MATCH {i + 1}</p>
-                {/* Highlighted match time for Pool A fixtures */}
-                {/* <p className="text-xs text-gray-400">{match.time}</p> */}
-                <p className="text-sm font-bold bg-yellow-400 text-black px-3 py-[3px] rounded shadow">{match.time}</p>
-                <p className="text-lg font-bold">VS</p>
-              </div>
-
-              <div className="text-right w-5/12">
-                <p className="text-sm font-semibold uppercase">
-                  {teamMap[match.t2]}
-                </p>
-              </div>
-
-            </div>
-          ))}
-        </div>
-
-      </div>
-
-        {/* Pool B Section */}
-        <div>
-
-          <div className="bg-gradient-to-r from-blue-600 to-blue-400 text-white text-center py-3 rounded-lg font-bold tracking-widest shadow-lg mb-4">
-            <div>🅱️ POOL B FIXTURES</div>
-            <div className="mt-1">
-              <span className="bg-white text-blue-700 px-3 py-1 rounded text-sm">
-                SUNDAY • 15 MARCH
-              </span>
-            </div>
+          <div className="flex justify-between items-center mb-6 border-b border-gray-700 pb-3">
+            <p className="text-sm text-gray-400">AUCTION STATUS</p>
+            <p className="text-gray-400 font-bold">● IDLE</p>
           </div>
 
-          <div className="grid gap-4">
-            {poolBMatches.map((match, i) => (
-              <div
-                key={i}
-                className="bg-gray-900 border border-blue-500 rounded-xl p-4 flex items-center justify-between shadow-md"
+          <div className="flex flex-col items-center text-center">
+
+            <div className="w-48 h-48 rounded-full bg-gray-800 flex items-center justify-center mb-4 border-4 border-yellow-400">
+              <span className="text-gray-500">Player</span>
+            </div>
+
+            <h2 className="text-3xl font-bold mb-2">
+              Waiting for Player
+            </h2>
+
+            <p className="text-sm text-gray-400 mb-4">
+              Role
+            </p>
+
+            <div className="bg-black px-8 py-4 rounded-lg border border-yellow-400 shadow-lg">
+              <p className="text-gray-400 text-sm">CURRENT BID</p>
+              <p className="text-yellow-400 text-4xl font-bold">
+                ₹0
+              </p>
+            </div>
+
+          </div>
+
+          <div className="mt-8 text-center">
+            <p className="text-gray-400 text-sm">Current Bidder</p>
+            <p className="text-xl font-semibold text-green-400">--</p>
+          </div>
+
+        </div>
+
+        {/* TOGGLE */}
+        <div className="flex justify-center gap-4 mb-6">
+
+          <button
+            onClick={() => setView("overview")}
+            className={`px-4 py-2 rounded ${view==="overview" ? "bg-yellow-400 text-black" : "bg-gray-700"}`}
+          >
+            Teams
+          </button>
+
+          <button
+            onClick={() => setView("players")}
+            className={`px-4 py-2 rounded ${view==="players" ? "bg-yellow-400 text-black" : "bg-gray-700"}`}
+          >
+            Players
+          </button>
+
+          <button
+            onClick={() => setView("teams")}
+            className={`px-4 py-2 rounded ${view==="teams" ? "bg-yellow-400 text-black" : "bg-gray-700"}`}
+          >
+            Team Squads
+          </button>
+
+        </div>
+
+        {/* TEAMS */}
+        {view === "overview" && (
+          <div className="bg-transparent rounded-xl p-2">
+
+            <h2 className="text-lg font-semibold mb-4 text-yellow-300 text-center">
+              Teams
+            </h2>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 justify-items-center">
+              {teams.map((team, index) => {
+                const teamColors = [
+                  "from-yellow-500 to-yellow-700",
+                  "from-red-600 to-red-800",
+                  "from-blue-600 to-blue-800",
+                  "from-green-600 to-green-800",
+                  "from-purple-600 to-purple-800",
+                  "from-pink-600 to-pink-800",
+                  "from-orange-500 to-orange-700",
+                  "from-cyan-500 to-cyan-700"
+                ];
+
+                const color = teamColors[index % teamColors.length];
+
+                return (
+                  <div
+                    key={team.id}
+                    onClick={() => {
+                      setSelectedTeam(team)
+                      setView("teams")
+                    }}
+                    className={`relative w-full max-w-[220px] h-64 md:h-72 rounded-xl overflow-hidden group shadow-lg bg-gradient-to-br ${color} cursor-pointer 
+  ${team.id === activeTeamId ? 'ring-4 ring-yellow-400 scale-105 shadow-[0_0_25px_rgba(255,215,0,0.8)]' : ''}`}
+                  >
+
+                    {/* Pattern Overlay */}
+                    <div className="absolute inset-0 bg-[url('https://www.iplt20.com/assets/images/back-bg-csk.png')] bg-cover opacity-20"></div>
+
+                    {/* Dark Overlay */}
+                    <div className="absolute inset-0 bg-black/30"></div>
+
+                    {team.id === activeTeamId && (
+                      <div className="absolute top-2 right-2 bg-yellow-400 text-black text-[10px] px-2 py-1 rounded-full font-bold animate-pulse">
+                        LIVE
+                      </div>
+                    )}
+
+                    {/* Content */}
+                    <div className="relative z-10 flex flex-col items-center justify-between h-full px-2 py-3">
+
+                      {/* Logo */}
+                      {team.logo_url && (
+                        <img
+                          src={team.logo_url}
+                          alt={team.name}
+                          className="w-20 h-20 md:w-24 md:h-24 object-contain drop-shadow-xl"
+                        />
+                      )}
+
+                      {/* Team Name */}
+                      <p className="text-[11px] text-white text-center font-semibold leading-tight">
+                        {team.name}
+                      </p>
+
+                      {/* Info Blocks */}
+                      <div className="grid grid-cols-3 mt-3 w-full border border-white/20 rounded overflow-hidden">
+
+                        {/* Funds Remaining */}
+                        <div className="bg-black/40 text-center py-2 border-r border-white/20">
+                          <p className="text-[10px] text-gray-300">Funds</p>
+                          <p className="text-green-300 text-sm font-bold">
+                            ₹{team.purse_remaining}
+                          </p>
+                        </div>
+
+                        {/* Players in Team */}
+                        <div className="bg-black/40 text-center py-2 border-r border-white/20">
+                          <p className="text-[10px] text-gray-300">Players</p>
+                          <p className="text-blue-300 text-sm font-bold">
+                            {getPlayerCount(team.id)}
+                          </p>
+                        </div>
+
+                        {/* Remaining Slots */}
+                        <div className="bg-black/40 text-center py-2">
+                          <p className="text-[10px] text-gray-300">Slots Left</p>
+                          <p className="text-yellow-300 text-sm font-bold">
+                            {getRemainingSlots(team.id, team.max_players)}
+                          </p>
+                        </div>
+
+                      </div>
+
+                    </div>
+
+                  </div>
+                )
+              })}
+            </div>
+
+          </div>
+        )}
+
+        {view === "players" && (
+          <>
+            {/* SEARCH + FILTERS */}
+            <div className="flex flex-col md:flex-row gap-3 mb-4">
+              <input
+                type="text"
+                placeholder="Search player..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="px-3 py-2 rounded bg-[#111633] border border-gray-600 text-white w-full md:w-1/3"
+              />
+              <select
+                value={roleFilter}
+                onChange={(e) => setRoleFilter(e.target.value)}
+                className="px-3 py-2 rounded bg-[#111633] border border-gray-600 text-white"
               >
+                <option value="all">All Roles</option>
+                <option value="Batsman">Batsman</option>
+                <option value="Bowler">Bowler</option>
+                <option value="Allrounder">Allrounder</option>
+              </select>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="px-3 py-2 rounded bg-[#111633] border border-gray-600 text-white"
+              >
+                <option value="all">All Status</option>
+                <option value="available">Available</option>
+                <option value="unsold">Unsold</option>
+                <option value="sold">Sold</option>
+              </select>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {players
+                .filter(p => {
+                  const matchesSearch =
+                    p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    String(p.player_number || "").includes(searchTerm)
+                  const matchesRole = roleFilter === "all" || p.role?.toLowerCase() === roleFilter.toLowerCase()
+                  const matchesStatus = statusFilter === "all" || p.status === statusFilter
+                  return matchesSearch && matchesRole && matchesStatus
+                })
+                .sort((a, b) => (a.player_number || 0) - (b.player_number || 0))
+                .map(player => (
+                  <div key={player.id} className="bg-[#111633] p-3 rounded-xl text-center">
+                    <img
+                      src={player.image}
+                      className="w-20 h-20 mx-auto rounded-full object-cover mb-2 cursor-pointer"
+                      onClick={() => setFullscreenImage(player.image)}
+                    />
+                    <p className="text-sm font-bold">{player.name}</p>
+                    <p className="text-xs text-gray-400">{player.role}</p>
+                    <p className="text-xs text-yellow-400">#{player.player_number}</p>
+                  </div>
+                ))}
+            </div>
+          </>
+        )}
 
-                <div className="text-left w-5/12">
-                  <p className="text-sm font-semibold uppercase">
-                    {teamMap[match.t1]}
-                  </p>
+        {view === "teams" && (
+          <div className="space-y-6">
+            {/* TEAM LOGO STACK */}
+            <div className="flex justify-center gap-3 mb-6 flex-wrap">
+              {teams.map(team => (
+                <img
+                  key={team.id}
+                  src={team.logo_url}
+                  onClick={() => setSelectedTeam(team)}
+                  className="w-12 h-12 rounded-full border-2 border-white cursor-pointer hover:scale-110 transition"
+                />
+              ))}
+            </div>
+            {(selectedTeam ? [selectedTeam] : teams).map(team => (
+              <div key={team.id}>
+
+                <div className="bg-[#111633] rounded-xl p-6 mb-4 flex flex-col items-center">
+
+                  {/* Team Logo (TOP CENTER BIG) */}
+                  {team.logo_url && (
+                    <img
+                      src={team.logo_url}
+                      className="w-28 h-28 md:w-32 md:h-32 object-contain mb-4 drop-shadow-[0_0_20px_rgba(255,255,255,0.6)]"
+                    />
+                  )}
+
+                  {/* Team Name */}
+                  <h3 className="text-2xl font-bold text-yellow-300 mb-3 text-center">
+                    {team.name}
+                  </h3>
+
+                  {/* Owner Name */}
+                  {team.owner_name && (
+                    <p className="text-sm font-semibold text-yellow-400 bg-black/40 px-3 py-1 rounded-full mb-3">
+                      {team.owner_name}
+                    </p>
+                  )}
+
+                  {/* Owner Photo (CENTER BELOW LOGO) */}
+                  {team.owner_photo_url && (
+                    <div className="flex flex-col items-center mb-4">
+                      <img
+                        src={team.owner_photo_url}
+                        onClick={() => setFullscreenImage(team.owner_photo_url)}
+                        className="w-20 h-20 md:w-24 md:h-24 rounded-xl border-4 border-yellow-400 shadow-[0_0_25px_rgba(255,215,0,0.8)] cursor-pointer"
+                      />
+                      <p className="text-xs mt-2 text-gray-300">Owner</p>
+                    </div>
+                  )}
+
+                  {/* Slots Info */}
+                  <div className="flex gap-6 text-center">
+
+                    <div>
+                      <p className="text-xs text-gray-400">Players</p>
+                      <p className="text-lg font-bold text-blue-300">
+                        {getPlayerCount(team.id)}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-xs text-gray-400">Slots Left</p>
+                      <p className="text-lg font-bold text-green-400">
+                        {getRemainingSlots(team.id, team.max_players)}
+                      </p>
+                    </div>
+
+                  </div>
+
                 </div>
 
-                <div className="text-center w-2/12">
-                  <p className="text-blue-400 font-bold text-sm">MATCH {i + 1}</p>
-                  {/* Highlighted match time for Pool B fixtures */}
-                  {/* <p className="text-xs text-gray-400">{match.time}</p> */}
-                  <p className="text-sm font-bold bg-blue-500 text-white px-3 py-[3px] rounded shadow">{match.time}</p>
-                  <p className="text-lg font-bold">VS</p>
-                </div>
-
-                <div className="text-right w-5/12">
-                  <p className="text-sm font-semibold uppercase">
-                    {teamMap[match.t2]}
-                  </p>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                  {players
+                    .filter(p => p.team_id === team.id)
+                    .map(player => (
+                      <div
+                        key={player.id}
+                        className={`relative rounded-xl overflow-hidden text-center p-3 ${
+                          player.is_retained ? 'bg-yellow-600' : 'bg-[#111633]'
+                        }`}
+                      >
+                        {player.is_retained && (
+                          <div className="absolute top-1 right-1 bg-black text-yellow-400 text-[9px] px-2 py-[2px] rounded">
+                            RETAINED
+                          </div>
+                        )}
+                        <img
+                          src={player.image}
+                          className="w-20 h-20 mx-auto rounded-lg object-cover mb-2"
+                        />
+                        <p className="text-sm font-semibold">{player.name}</p>
+                        <p className="text-xs text-gray-400">{player.role}</p>
+                        <p className="text-sm text-green-400 font-bold mt-1">₹{player.sold_price}</p>
+                      </div>
+                    ))}
                 </div>
 
               </div>
             ))}
           </div>
-
-        </div>
-
-      </div>
-
-      {/* SEMI FINALS */}
-      <div className="mt-12">
-
-        <div className="bg-gradient-to-r from-purple-600 to-pink-500 text-white text-center py-2 rounded-lg font-bold tracking-widest shadow-lg mb-4">
-          🏆 SEMI FINALS • <span className="bg-yellow-400 text-black px-2 py-1 rounded">LOTS</span>
-        </div>
-        <div className="text-center text-sm text-yellow-300 mb-4 font-semibold">
-          ( TOP 4 TEAMS SEMI LOTS )
-        </div>
-
-        <div className="grid gap-4">
-          {semiFinalMatches.map((match, i) => (
-            <div
-              key={i}
-              className="bg-gray-900 border border-purple-500 rounded-xl p-4 flex items-center justify-center shadow-md"
-            >
-              <div className="text-center">
-                <p className="text-sm font-semibold uppercase">
-                  {match.label}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
+        )}
 
       </div>
 
-      {/* FINAL */}
-      <div className="mt-12">
-
-        <div className="bg-gradient-to-r from-red-600 to-yellow-500 text-white text-center py-2 rounded-lg font-bold tracking-widest shadow-lg mb-4">
-          🏆 GRAND FINAL
-        </div>
-
-        <div className="bg-gray-900 border border-yellow-500 rounded-xl p-4 flex items-center justify-between shadow-md">
-
-          <div className="text-left w-5/12">
-            <p className="text-sm font-semibold uppercase">
-              {finalMatch.label}
-            </p>
-          </div>
-
-          <div className="text-center w-2/12">
-            <p className="text-yellow-400 font-bold text-sm">FINAL</p>
-            <p className="text-lg font-bold">VS</p>
-          </div>
-
-          <div className="text-right w-5/12">
-            <p className="text-sm font-semibold uppercase">
-              {finalMatch.vs}
-            </p>
-          </div>
-
-        </div>
-
-      </div>
-
-      {/* Selected Team Squad Popup */}
-      {selectedTeam && (
-        <div className="fixed inset-0 bg-black/95 p-4 overflow-y-auto z-50">
-
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold px-4 py-1 rounded-lg bg-gradient-to-r from-yellow-500 to-yellow-400 text-black shadow-lg">
-              {selectedTeam.name}
-            </h2>
-            <button
-              onClick={() => {
-                setSelectedTeam(null)
-                setTeamSquad([])
-              }}
-              className="text-red-400 font-bold"
-            >Close</button>
-          </div>
-
-          <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-lg p-3 mb-3 border border-yellow-500 shadow-md">
-
-            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
-
-              {/* Owner Section */}
-              <div className="flex items-center gap-4">
-                {selectedTeam.owner_photo_url && (
-                  <img
-                    src={selectedTeam.owner_photo_url}
-                    onClick={() => setPreviewImage(selectedTeam.owner_photo_url)}
-                    className="w-20 h-20 rounded-full object-cover border-2 border-yellow-400 cursor-pointer hover:scale-105 transition"
-                  />
-                )}
-                <div>
-                  <p className="text-xs text-gray-400 uppercase tracking-wide">Owner</p>
-                  <p className="text-lg font-semibold">{selectedTeam.owner_name}</p>
-                </div>
-              </div>
-
-              {/* Retained Players Right Side */}
-              <div className="w-full md:w-auto">
-                <p className="text-xs text-gray-400 uppercase tracking-wide mb-2 text-center md:text-left">
-                  Retained Players
-                </p>
-
-                <div className="flex flex-wrap gap-3 justify-center md:justify-start">
-                  {teamSquad
-                    .filter(p => p.status === "retained")
-                    .map(p => (
-                      <div
-                        key={p.id}
-                        className="flex items-center gap-3 bg-gray-800 border border-yellow-400 px-3 py-2 rounded-lg text-xs shadow-sm"
-                      >
-                        {p.image && (
-                          <img
-                            src={p.image}
-                            onClick={() => setPreviewImage(p.image)}
-                            className="w-16 h-16 rounded-full object-cover border-2 border-yellow-400 cursor-pointer hover:scale-105 transition"
-                          />
-                        )}
-                        <div>
-                          <p className="text-sm font-semibold text-white">{p.name}</p>
-                          <p className="text-xs text-yellow-400 font-semibold">₹{p.sold_price}</p>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              </div>
-
-            </div>
-
-          </div>
-
-          <div className="mt-6">
-            <div className="grid grid-cols-4 gap-3">
-              {teamSquad.filter(p => p.status !== "retained").map(player => {
-                const isRetained = player.status === "retained"
-
-                return (
-                  <div
-                    key={player.id}
-                    className={`rounded-xl p-2 text-center transition-all duration-300
-                      ${isRetained
-                        ? "bg-yellow-500 text-black"
-                        : "bg-gray-900 border border-gray-700"
-                      }
-                    `}
-                  >
-                    {player.image && (
-                      <img
-                        src={player.image}
-                        alt={player.name}
-                        onClick={() => setPreviewImage(player.image)}
-                        className={`w-16 h-16 mx-auto rounded-lg object-cover mb-2 cursor-pointer transition-transform duration-200 hover:scale-105
-                          ${isRetained ? "border-4 border-white" : "border border-gray-700"}`}
-                      />
-                    )}
-
-                    <p className="font-semibold text-[11px] leading-tight uppercase">
-                      {player.name}
-                    </p>
-
-                    <p className={`text-[10px] mt-1 ${isRetained ? "text-black/80" : "text-gray-400"}`}>
-                      ₹{player.sold_price}
-                    </p>
-
-                    {isRetained && (
-                      <div className="mt-1 text-[9px] font-bold bg-black text-yellow-400 px-2 py-[2px] rounded-full inline-block">
-                        RETAINED
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-
-        </div>
-      )}
-
-      {previewImage && (
-        <div
-          className="fixed inset-0 bg-black/95 flex items-center justify-center z-[9999] p-4"
-          onClick={() => setPreviewImage(null)}
+      {fullscreenImage && (
+        <div 
+          className="fixed inset-0 bg-black/90 flex items-center justify-center z-50"
+          onClick={() => setFullscreenImage(null)}
         >
-          <img
-            src={previewImage}
-            alt="Preview"
-            onClick={(e) => e.stopPropagation()}
-            className="max-h-[95vh] max-w-[95vw] rounded-2xl shadow-2xl"
+          <img 
+            src={fullscreenImage} 
+            className="max-w-full max-h-full object-contain"
           />
         </div>
       )}
