@@ -13,6 +13,8 @@ export default function DisplayPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [roleFilter, setRoleFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
+  // 1) Add new state for auction
+  const [auctionState, setAuctionState] = useState(null)
 
   const fetchTeams = async () => {
     const { data } = await supabase.from("teams").select("*")
@@ -26,9 +28,23 @@ export default function DisplayPage() {
     setPlayers(data || [])
   }
 
+  // 2) Add fetchAuctionState function below fetchPlayers
+  const fetchAuctionState = async () => {
+    const { data } = await supabase
+      .from("auction_state")
+      .select("*")
+      .single()
+    setAuctionState(data)
+    if (data?.highest_team) {
+      setActiveTeamId(data.highest_team)
+    }
+  }
+
   useEffect(() => {
     fetchTeams()
     fetchPlayers()
+    // 3) In useEffect, after fetchPlayers():
+    fetchAuctionState()
 
     const teamChannel = supabase
       .channel("teams-live")
@@ -48,9 +64,21 @@ export default function DisplayPage() {
       )
       .subscribe()
 
+    // 4) Add realtime subscription for auction_state
+    const auctionChannel = supabase
+      .channel("auction-live")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "auction_state" },
+        fetchAuctionState
+      )
+      .subscribe()
+
     return () => {
       supabase.removeChannel(teamChannel)
       supabase.removeChannel(playerChannel)
+      // Cleanup for auctionChannel
+      supabase.removeChannel(auctionChannel)
     }
   }, [])
 
@@ -206,30 +234,35 @@ export default function DisplayPage() {
                       </p>
 
                       {/* Info Blocks */}
-                      <div className="grid grid-cols-3 mt-3 w-full border border-white/20 rounded overflow-hidden">
+                      <div className="w-full mt-3 space-y-2">
 
-                        {/* Funds Remaining */}
-                        <div className="bg-black/40 text-center py-2 border-r border-white/20">
-                          <p className="text-[10px] text-gray-300">Funds</p>
-                          <p className="text-green-300 text-sm font-bold">
+                        {/* Funds - Full Width */}
+                        <div className="bg-black/40 text-center py-2 rounded border border-white/20">
+                          <p className="text-[10px] text-gray-300">Funds Remaining</p>
+                          <p className="text-green-300 text-base font-bold">
                             ₹{team.purse_remaining}
                           </p>
                         </div>
 
-                        {/* Players in Team */}
-                        <div className="bg-black/40 text-center py-2 border-r border-white/20">
-                          <p className="text-[10px] text-gray-300">Players</p>
-                          <p className="text-blue-300 text-sm font-bold">
-                            {getPlayerCount(team.id)}
-                          </p>
-                        </div>
+                        {/* Players + Slots Row */}
+                        <div className="grid grid-cols-2 gap-2">
 
-                        {/* Remaining Slots */}
-                        <div className="bg-black/40 text-center py-2">
-                          <p className="text-[10px] text-gray-300">Slots Left</p>
-                          <p className="text-yellow-300 text-sm font-bold">
-                            {getRemainingSlots(team.id, team.max_players)}
-                          </p>
+                          {/* Players */}
+                          <div className="bg-black/40 text-center py-2 rounded border border-white/20">
+                            <p className="text-[10px] text-gray-300">Players</p>
+                            <p className="text-blue-300 text-sm font-bold">
+                              {getPlayerCount(team.id)}
+                            </p>
+                          </div>
+
+                          {/* Slots Left */}
+                          <div className="bg-black/40 text-center py-2 rounded border border-white/20">
+                            <p className="text-[10px] text-gray-300">Slots Left</p>
+                            <p className="text-yellow-300 text-sm font-bold">
+                              {getRemainingSlots(team.id, team.max_players)}
+                            </p>
+                          </div>
+
                         </div>
 
                       </div>
@@ -288,7 +321,35 @@ export default function DisplayPage() {
                 })
                 .sort((a, b) => (a.player_number || 0) - (b.player_number || 0))
                 .map(player => (
-                  <div key={player.id} className="bg-[#111633] p-3 rounded-xl text-center">
+                  <div
+                    key={player.id}
+                    className={`relative p-3 rounded-xl text-center transition ${
+                      (
+                        (searchTerm &&
+                          (player.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            String(player.player_number || "").includes(searchTerm))) ||
+                        player.id === auctionState?.current_player
+                      )
+                        ? "bg-yellow-500/20 ring-2 ring-yellow-400 scale-105 shadow-[0_0_25px_rgba(255,215,0,0.8)]"
+                        : "bg-[#111633]"
+                    }`}
+                  >
+                    {/* STATUS BADGE */}
+                    <div className="absolute top-2 left-2">
+                      {player.is_retained ? (
+                        <span className="text-[10px] px-2 py-1 rounded bg-yellow-400 text-black font-bold">RETAINED</span>
+                      ) : player.status === "sold" ? (
+                        <span className="text-[10px] px-2 py-1 rounded bg-red-500 text-white font-bold">SOLD</span>
+                      ) : (
+                        <span className="text-[10px] px-2 py-1 rounded bg-green-500 text-white font-bold">AVAILABLE</span>
+                      )}
+                    </div>
+                    {/* 6) Add LIVE badge for current player */}
+                    {player.id === auctionState?.current_player && (
+                      <div className="absolute top-2 right-2 bg-green-400 text-black text-[10px] px-2 py-1 rounded font-bold animate-pulse">
+                        LIVE
+                      </div>
+                    )}
                     <img
                       src={player.image}
                       className="w-20 h-20 mx-auto rounded-full object-cover mb-2 cursor-pointer"
@@ -296,7 +357,15 @@ export default function DisplayPage() {
                     />
                     <p className="text-sm font-bold">{player.name}</p>
                     <p className="text-xs text-gray-400">{player.role}</p>
-                    <p className="text-xs text-yellow-400">#{player.player_number}</p>
+                    <p className="text-sm font-bold text-yellow-300 bg-black/40 px-2 py-1 rounded-full inline-block mt-1">
+                      #{player.player_number}
+                    </p>
+                    {/* 7) Show bid price for SOLD players */}
+                    {player.status === "sold" && (
+                      <p className="text-xs text-green-400 font-bold mt-1">
+                        ₹{player.sold_price}
+                      </p>
+                    )}
                   </div>
                 ))}
             </div>
