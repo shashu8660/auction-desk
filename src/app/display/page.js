@@ -15,6 +15,8 @@ export default function DisplayPage() {
   const [statusFilter, setStatusFilter] = useState("all")
   // 1) Add new state for auction
   const [auctionState, setAuctionState] = useState(null)
+  const [lastBid, setLastBid] = useState(0)
+  const [bidFlash, setBidFlash] = useState(false)
 
   const fetchTeams = async () => {
     const { data } = await supabase.from("teams").select("*")
@@ -33,8 +35,18 @@ export default function DisplayPage() {
     const { data } = await supabase
       .from("auction_state")
       .select("*")
-      .single()
+      .eq("id", 1)
+      .maybeSingle()
+
     setAuctionState(data)
+
+    // Animation for bid increase
+    if (data?.current_bid && data.current_bid > lastBid) {
+      setBidFlash(true)
+      setTimeout(() => setBidFlash(false), 600)
+    }
+    setLastBid(data?.current_bid || 0)
+
     if (data?.highest_team) {
       setActiveTeamId(data.highest_team)
     }
@@ -46,39 +58,46 @@ export default function DisplayPage() {
     // 3) In useEffect, after fetchPlayers():
     fetchAuctionState()
 
-    const teamChannel = supabase
-      .channel("teams-live")
+    const channel = supabase
+      .channel("auction-realtime")
+
+      // TEAMS
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "teams" },
-        fetchTeams
+        (payload) => {
+          setTeams(prev =>
+            prev.map(t =>
+              t.id === payload.new.id ? { ...t, ...payload.new } : t
+            )
+          )
+        }
       )
-      .subscribe()
 
-    const playerChannel = supabase
-      .channel("players-live")
+      // PLAYERS
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "players" },
-        fetchPlayers
+        (payload) => {
+          setPlayers(prev =>
+            prev.map(p =>
+              p.id === payload.new.id ? { ...p, ...payload.new } : p
+            )
+          )
+        }
       )
-      .subscribe()
 
-    // 4) Add realtime subscription for auction_state
-    const auctionChannel = supabase
-      .channel("auction-live")
+      // AUCTION STATE
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "auction_state" },
         fetchAuctionState
       )
+
       .subscribe()
 
     return () => {
-      supabase.removeChannel(teamChannel)
-      supabase.removeChannel(playerChannel)
-      // Cleanup for auctionChannel
-      supabase.removeChannel(auctionChannel)
+      supabase.removeChannel(channel)
     }
   }, [])
 
@@ -111,27 +130,44 @@ export default function DisplayPage() {
 
           <div className="flex justify-between items-center mb-6 border-b border-gray-700 pb-3">
             <p className="text-sm text-gray-400">AUCTION STATUS</p>
-            <p className="text-gray-400 font-bold">● IDLE</p>
+            <p className={`font-bold ${auctionState?.status === "live" ? "text-green-400" : "text-gray-400"}`}>
+              ● {auctionState?.status?.toUpperCase() || "IDLE"}
+            </p>
           </div>
 
           <div className="flex flex-col items-center text-center">
 
-            <div className="w-48 h-48 rounded-full bg-gray-800 flex items-center justify-center mb-4 border-4 border-yellow-400">
-              <span className="text-gray-500">Player</span>
-            </div>
+            {players.find(p => p.id === auctionState?.current_player) ? (
+              <>
+                <img
+                  src={players.find(p => p.id === auctionState.current_player)?.image}
+                  onClick={() => setFullscreenImage(players.find(p => p.id === auctionState.current_player)?.image)}
+                  className="w-48 h-48 rounded-full object-cover mb-4 border-4 border-yellow-400 cursor-pointer"
+                />
 
-            <h2 className="text-3xl font-bold mb-2">
-              Waiting for Player
-            </h2>
+                <h2 className="text-3xl font-bold mb-2">
+                  {players.find(p => p.id === auctionState.current_player)?.name}
+                </h2>
 
-            <p className="text-sm text-gray-400 mb-4">
-              Role
-            </p>
+                <p className="text-sm text-gray-400 mb-4">
+                  {players.find(p => p.id === auctionState.current_player)?.role}
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="w-48 h-48 rounded-full bg-gray-800 flex items-center justify-center mb-4 border-4 border-yellow-400">
+                  <span className="text-gray-500">Player</span>
+                </div>
+                <h2 className="text-3xl font-bold mb-2">Waiting for Player</h2>
+              </>
+            )}
 
             <div className="bg-black px-8 py-4 rounded-lg border border-yellow-400 shadow-lg">
               <p className="text-gray-400 text-sm">CURRENT BID</p>
-              <p className="text-yellow-400 text-4xl font-bold">
-                ₹0
+              <p className={`text-yellow-400 text-4xl font-bold transition ${
+                bidFlash ? "scale-110 text-green-400" : ""
+              }`}>
+                ₹{auctionState?.current_bid || 0}
               </p>
             </div>
 
@@ -139,7 +175,9 @@ export default function DisplayPage() {
 
           <div className="mt-8 text-center">
             <p className="text-gray-400 text-sm">Current Bidder</p>
-            <p className="text-xl font-semibold text-green-400">--</p>
+            <p className="text-xl font-semibold text-green-400">
+              {teams.find(t => t.id === auctionState?.highest_team)?.name || "--"}
+            </p>
           </div>
 
         </div>
@@ -201,7 +239,7 @@ export default function DisplayPage() {
                       setView("teams")
                     }}
                     className={`relative w-full max-w-[220px] h-64 md:h-72 rounded-xl overflow-hidden group shadow-lg bg-gradient-to-br ${color} cursor-pointer 
-  ${team.id === activeTeamId ? 'ring-4 ring-yellow-400 scale-105 shadow-[0_0_25px_rgba(255,215,0,0.8)]' : ''}`}
+  ${team.id === activeTeamId ? 'ring-4 ring-yellow-400 scale-105 shadow-[0_0_25px_rgba(255,215,0,0.8)] animate-pulse' : ''}`}
                   >
 
                     {/* Pattern Overlay */}
@@ -339,7 +377,7 @@ export default function DisplayPage() {
                       {player.is_retained ? (
                         <span className="text-[10px] px-2 py-1 rounded bg-yellow-400 text-black font-bold">RETAINED</span>
                       ) : player.status === "sold" ? (
-                        <span className="text-[10px] px-2 py-1 rounded bg-red-500 text-white font-bold">SOLD</span>
+                        <span className="text-[10px] px-2 py-1 rounded bg-red-500 text-white font-bold animate-pulse">SOLD</span>
                       ) : (
                         <span className="text-[10px] px-2 py-1 rounded bg-green-500 text-white font-bold">AVAILABLE</span>
                       )}

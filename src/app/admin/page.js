@@ -222,14 +222,47 @@ export default function AdminPage() {
   }
 
   const handleUndo = async () => {
-    const { error } = await supabase.rpc("undo_last_sold")
+    // 1. Get last sold player
+    const { data: lastSold } = await supabase
+      .from("players")
+      .select("*")
+      .eq("status", "sold")
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .single()
 
-    if (error) {
-      alert(error.message)
-    } else {
-      alert("Last sold player reverted successfully")
-      fetchData()
+    if (!lastSold) {
+      alert("No sold player to undo")
+      return
     }
+
+    // 2. Refund amount (atomic via RPC)
+    if (lastSold.team_id && lastSold.sold_price) {
+      const { error: refundError } = await supabase.rpc("refund_team_purse", {
+        team_id_input: lastSold.team_id,
+        amount_input: lastSold.sold_price
+      })
+
+      if (refundError) {
+        alert(refundError.message)
+        return
+      }
+    }
+
+    // 4. Reset player
+    await supabase
+      .from("players")
+      .update({
+        status: "available",
+        sold_price: null,
+        team_id: null,
+        team_name: null,
+        owner_name: null
+      })
+      .eq("id", lastSold.id)
+
+    alert("Last sold player reverted successfully")
+    fetchData()
   }
 
   const handleFullReset = async () => {
