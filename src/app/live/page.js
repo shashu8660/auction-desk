@@ -130,7 +130,7 @@ export default function DisplayPage() {
 
           <div className="flex justify-between items-center mb-6 border-b border-gray-700 pb-3">
             <p className="text-sm text-gray-400">AUCTION STATUS</p>
-            <p className={`font-bold ${auctionState?.status === "live" ? "text-green-400" : "text-gray-400"}`}>
+            <p className={`font-bold ${auctionState?.status === "running" || auctionState?.status === "live" ? "text-green-400" : "text-gray-400"}`}>
               ● {auctionState?.status?.toUpperCase() || "IDLE"}
             </p>
           </div>
@@ -481,24 +481,62 @@ export default function DisplayPage() {
 
                 </div>
 
+                {/* ICONIC PLAYER HIGHLIGHT (FULL WIDTH) */}
+                {players
+                  .filter(p => p.team_id === team.id && (p.is_retained === true || p.is_retained === "true"))
+                  .map(player => (
+                    <div
+                      key={`iconic-${player.id}`}
+                      className="w-full mb-4 flex items-center gap-4 p-4 rounded-xl 
+                      bg-gradient-to-r from-[#1f2937] to-[#111827] 
+                      border-2 border-yellow-400 
+                      shadow-[0_0_20px_rgba(255,215,0,0.6)]"
+                    >
+                      <img
+                        src={player.image}
+                        className="w-20 h-20 rounded-lg object-cover border-2 border-yellow-400 shadow-[0_0_10px_rgba(255,215,0,0.7)]"
+                      />
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-yellow-400 tracking-widest uppercase">
+                          ★ Iconic Player
+                        </p>
+                        <p className="text-xl font-bold text-white">
+                          {player.name}
+                        </p>
+                        <p className="text-sm text-gray-400">
+                          {player.role}
+                        </p>
+                      </div>
+                    </div>
+                ))}
+
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                   {players
-                    .filter(p => p.team_id === team.id)
+                    .filter(p => p.team_id === team.id && !(p.is_retained === true || p.is_retained === "true"))
                     .map(player => (
                       <div
                         key={player.id}
-                        className={`relative rounded-xl overflow-hidden text-center p-3 ${
-                          player.is_retained ? 'bg-yellow-600' : 'bg-[#111633]'
+                        className={`relative rounded-xl overflow-hidden text-center p-3 transition-all duration-300 ${
+                          player.is_retained 
+                            ? 'bg-gradient-to-b from-yellow-400 via-yellow-500 to-yellow-700 text-black scale-105 shadow-[0_0_25px_rgba(255,215,0,0.9)] border-2 border-yellow-300' 
+                            : 'bg-[#111633]'
                         }`}
                       >
+                        {/* Subtle glow overlay for iconic cards */}
                         {player.is_retained && (
-                          <div className="absolute top-1 right-1 bg-black text-yellow-400 text-[9px] px-2 py-[2px] rounded">
-                            RETAINED
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none"></div>
+                        )}
+                        {/* Modern ICONIC badge */}
+                        {player.is_retained && (
+                          <div className="absolute top-2 right-2 bg-gradient-to-r from-yellow-300 to-orange-400 text-black text-[10px] px-3 py-1 rounded-full font-bold shadow-lg animate-pulse">
+                            ★ ICONIC
                           </div>
                         )}
                         <img
                           src={player.image}
-                          className="w-20 h-20 mx-auto rounded-lg object-cover mb-2"
+                          className={`mx-auto rounded-lg object-cover mb-2 ${
+                            player.is_retained ? "w-24 h-24 border-2 border-black shadow-lg" : "w-20 h-20"
+                          }`}
                         />
                         <p className="text-sm font-semibold">{player.name}</p>
                         <p className="text-xs text-gray-400">{player.role}</p>

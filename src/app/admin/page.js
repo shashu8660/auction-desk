@@ -61,6 +61,7 @@ export default function AdminPage() {
         team_id,
         image,
         player_number,
+        is_retained,
         teams (
           name,
           owner_name
@@ -293,6 +294,11 @@ export default function AdminPage() {
     if (error) {
       alert(error.message)
     } else {
+      await supabase
+        .from("players")
+        .update({ is_retained: true })
+        .eq("id", retainPlayerId)
+
       alert("Player marked as retained")
       setRetainPlayerId(null)
       setRetainAmount("")
