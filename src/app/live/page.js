@@ -375,7 +375,7 @@ export default function DisplayPage() {
                     {/* STATUS BADGE */}
                     <div className="absolute top-2 left-2">
                       {player.is_retained ? (
-                        <span className="text-[10px] px-2 py-1 rounded bg-yellow-400 text-black font-bold">RETAINED</span>
+                        <span className="text-[10px] px-2 py-1 rounded bg-yellow-400 text-black font-bold">ICON</span>
                       ) : player.status === "sold" ? (
                         <span className="text-[10px] px-2 py-1 rounded bg-red-500 text-white font-bold animate-pulse">SOLD</span>
                       ) : (
@@ -498,7 +498,7 @@ export default function DisplayPage() {
                       />
                       <div className="flex-1">
                         <p className="text-sm font-semibold text-yellow-400 tracking-widest uppercase">
-                          ★ Iconic Player
+                          ★ Icon Player
                         </p>
                         <p className="text-xl font-bold text-white">
                           {player.name}
@@ -516,22 +516,8 @@ export default function DisplayPage() {
                     .map(player => (
                       <div
                         key={player.id}
-                        className={`relative rounded-xl overflow-hidden text-center p-3 transition-all duration-300 ${
-                          player.is_retained 
-                            ? 'bg-gradient-to-b from-yellow-400 via-yellow-500 to-yellow-700 text-black scale-105 shadow-[0_0_25px_rgba(255,215,0,0.9)] border-2 border-yellow-300' 
-                            : 'bg-[#111633]'
-                        }`}
+                        className="relative rounded-xl overflow-hidden text-center p-3 bg-[#111633]"
                       >
-                        {/* Subtle glow overlay for iconic cards */}
-                        {player.is_retained && (
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none"></div>
-                        )}
-                        {/* Modern ICONIC badge */}
-                        {player.is_retained && (
-                          <div className="absolute top-2 right-2 bg-gradient-to-r from-yellow-300 to-orange-400 text-black text-[10px] px-3 py-1 rounded-full font-bold shadow-lg animate-pulse">
-                            ★ ICONIC
-                          </div>
-                        )}
                         <img
                           src={player.image}
                           className={`mx-auto rounded-lg object-cover mb-2 ${
@@ -540,7 +526,9 @@ export default function DisplayPage() {
                         />
                         <p className="text-sm font-semibold">{player.name}</p>
                         <p className="text-xs text-gray-400">{player.role}</p>
-                        <p className="text-sm text-green-400 font-bold mt-1">₹{player.sold_price}</p>
+                        {player.status === "sold" && (
+                          <p className="text-sm text-green-400 font-bold mt-1">₹{player.sold_price}</p>
+                        )}
                       </div>
                     ))}
                 </div>
