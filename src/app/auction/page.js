@@ -25,11 +25,11 @@ export default function AuctionPage() {
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("team_id")
+      .select("team_ids")
       .eq("id", userData.user.id)
       .single()
 
-    if (!profile?.team_id) {
+    if (!profile?.team_ids || profile.team_ids.length === 0) {
       router.push("/login")
       return
     }
@@ -38,10 +38,9 @@ export default function AuctionPage() {
     const { data: teamData } = await supabase
       .from("teams_with_purse")
       .select("*")
-      .eq("id", profile.team_id)
-      .single()
+      .in("id", profile.team_ids)
 
-    setTeam(teamData)
+    setTeam(teamData || [])
 
     // Auction state
     const { data: auctionData } = await supabase
@@ -80,7 +79,7 @@ export default function AuctionPage() {
     const { data: squad } = await supabase
       .from("players")
       .select("*")
-      .eq("team_id", profile.team_id)
+      .in("team_id", profile.team_ids)
       .in("status", ["sold", "retained"])
       .order("name", { ascending: true })
 
@@ -103,21 +102,54 @@ export default function AuctionPage() {
 
     const channel = supabase
       .channel("team-bid-realtime")
+
+      // Auction state realtime (MAIN FIX)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "auction_state" },
-        () => fetchData()
+        { event: "UPDATE", schema: "public", table: "auction_state" },
+        async (payload) => {
+          const newState = payload.new
+          setAuction(newState)
+
+          // update highest team name instantly
+          if (newState?.highest_team) {
+            const { data: highestTeam } = await supabase
+              .from("teams")
+              .select("name")
+              .eq("id", newState.highest_team)
+              .single()
+
+            setHighestTeamName(highestTeam?.name || null)
+          } else {
+            setHighestTeamName(null)
+          }
+
+          // update current player if changed
+          if (newState?.current_player) {
+            const { data: playerData } = await supabase
+              .from("players")
+              .select("*")
+              .eq("id", newState.current_player)
+              .single()
+
+            setPlayer(playerData)
+          } else {
+            setPlayer(null)
+          }
+        }
       )
+
+      // Players realtime
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "players" },
-        () => fetchData()
+        { event: "UPDATE", schema: "public", table: "players" },
+        (payload) => {
+          setPlayer(prev =>
+            prev?.id === payload.new.id ? { ...prev, ...payload.new } : prev
+          )
+        }
       )
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "auction_history" },
-        () => fetchData()
-      )
+
       .subscribe()
 
     return () => {
@@ -156,6 +188,32 @@ export default function AuctionPage() {
     router.push("/login")
   }
 
+  const placeBidForTeam = async (teamObj, increment) => {
+    if (!auction) return
+
+    if (auction.status !== "running") {
+      alert("Auction is not running")
+      return
+    }
+
+    const currentBid = auction.current_bid || 0
+    const newBid = currentBid + increment
+
+    if (newBid > teamObj.purse_remaining) {
+      alert("Insufficient purse")
+      return
+    }
+
+    const { error } = await supabase.rpc("place_bid", {
+      bid_amount: parseInt(newBid),
+      team_id: teamObj.id
+    })
+
+    if (error) {
+      alert(error.message)
+    }
+  }
+
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center bg-black text-white">
@@ -164,7 +222,7 @@ export default function AuctionPage() {
     )
   }
 
-  const isHighestBidder = auction?.highest_team === team?.id
+  const isHighestBidder = team?.some(t => t.id === auction?.highest_team)
 
   return (
     <div className="min-h-screen bg-black text-white p-4 md:p-10">
@@ -172,9 +230,9 @@ export default function AuctionPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-10">
         <div>
-          <h1 className="text-3xl font-bold">{team?.name}</h1>
+          <h1 className="text-3xl font-bold">Teams Panel</h1>
           <p className="text-green-400 font-semibold">
-            Purse Remaining: ₹{team?.purse_remaining}
+            {team?.map(t => `${t.name}: ₹${t.purse_remaining}`).join(" | ")}
           </p>
         </div>
 
@@ -219,82 +277,50 @@ export default function AuctionPage() {
           )}
 
           {/* Bid Buttons */}
-          {!isHighestBidder && (
-            <div className="flex justify-center gap-4 mt-6 flex-wrap">
-              {[100, 200, 500, 1000].map((amt) => (
-                <button
-                  key={amt}
-                  onClick={() => placeBid(amt)}
-                  disabled={
-                    auction.status !== "running" ||
-                    auction.current_bid + amt > team.purse_remaining
-                  }
-                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 px-6 py-2 rounded-lg"
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+            {team?.map(t => {
+              const isLeading = auction?.highest_team === t.id
+
+              return (
+                <div
+                  key={t.id}
+                  className={`p-6 rounded-2xl text-center border-2 transition-all duration-300 ${
+                    isLeading
+                      ? "border-yellow-400 bg-yellow-500/10 shadow-[0_0_20px_rgba(255,215,0,0.6)]"
+                      : "border-gray-700 bg-gray-800"
+                  }`}
                 >
-                  +₹{amt}
-                </button>
-              ))}
-            </div>
-          )}
+                  <p className="text-xl font-bold mb-3">{t.name}</p>
+
+                  {isLeading && (
+                    <p className="text-yellow-400 font-semibold mb-2">
+                      🔥 Currently Bidding
+                    </p>
+                  )}
+
+                  <div className="flex justify-center gap-4 mt-4">
+                    <button
+                      onClick={() => placeBidForTeam(t, 500)}
+                      disabled={auction?.highest_team === t.id}
+                      className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 px-5 py-2 rounded-lg font-bold"
+                    >
+                      +500
+                    </button>
+
+                    <button
+                      onClick={() => placeBidForTeam(t, 1000)}
+                      disabled={auction?.highest_team === t.id}
+                      className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 px-5 py-2 rounded-lg font-bold"
+                    >
+                      +1000
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
       )}
-
-      {/* Team Squad */}
-      <div className="bg-gray-900 p-8 rounded-2xl">
-        <h2 className="text-2xl font-bold mb-4">
-          Your Squad ({teamPlayers.length})
-        </h2>
-
-        {teamPlayers.length === 0 ? (
-          <p className="text-gray-400">No players yet.</p>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {teamPlayers.map((p) => (
-              <div
-                key={p.id}
-                className="bg-gray-800 p-4 rounded-lg text-center"
-              >
-                {p.image && (
-                  <img
-                    src={p.image}
-                    alt={p.name}
-                    className="h-20 mx-auto mb-3 object-contain"
-                  />
-                )}
-                <p className="font-semibold">{p.name}</p>
-                <p className="text-sm text-gray-400">₹{p.sold_price}</p>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Auction History */}
-      <div className="bg-gray-900 p-8 rounded-2xl mt-10">
-        <h2 className="text-2xl font-bold mb-4">
-          Auction History
-        </h2>
-
-        {auctionHistory.length === 0 ? (
-          <p className="text-gray-400">No completed sales yet.</p>
-        ) : (
-          <div className="space-y-3">
-            {auctionHistory.map((item, index) => (
-              <div
-                key={index}
-                className="bg-gray-800 p-3 rounded-lg flex flex-col sm:flex-row sm:justify-between gap-2"
-              >
-                <span className="font-semibold">
-                  {item.player_name}
-                </span>
-                <span className="text-yellow-400">
-                  {item.team_name}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
 
     </div>
   )

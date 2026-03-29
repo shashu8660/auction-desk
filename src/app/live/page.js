@@ -481,32 +481,41 @@ export default function DisplayPage() {
 
                 </div>
 
-                {/* ICONIC PLAYER HIGHLIGHT (FULL WIDTH) */}
+                {/* ICON PLAYER HERO SPOTLIGHT */}
                 {players
                   .filter(p => p.team_id === team.id && (p.is_retained === true || p.is_retained === "true"))
                   .map(player => (
                     <div
-                      key={`iconic-${player.id}`}
-                      className="w-full mb-4 flex items-center gap-4 p-4 rounded-xl 
-                      bg-gradient-to-r from-[#1f2937] to-[#111827] 
-                      border-2 border-yellow-400 
-                      shadow-[0_0_20px_rgba(255,215,0,0.6)]"
+                      key={`icon-${player.id}`}
+                      className="w-full mb-4 flex flex-col items-center justify-center text-center p-4 rounded-2xl 
+                      bg-gradient-to-b from-[#111633] via-[#0b0f2a] to-black 
+                      border-2 border-yellow-400 shadow-[0_0_40px_rgba(255,215,0,0.7)] relative overflow-hidden"
                     >
+
+                      {/* Glow Background */}
+                      <div className="absolute inset-0 bg-yellow-400/10 blur-2xl"></div>
+
+                      {/* Player Image */}
                       <img
                         src={player.image}
-                        className="w-20 h-20 rounded-lg object-cover border-2 border-yellow-400 shadow-[0_0_10px_rgba(255,215,0,0.7)]"
+                        className="w-24 h-24 rounded-full object-cover border-4 border-yellow-400 shadow-[0_0_20px_rgba(255,215,0,0.8)] mb-3 relative z-10"
                       />
-                      <div className="flex-1">
-                        <p className="text-sm font-semibold text-yellow-400 tracking-widest uppercase">
-                          ★ Icon Player
-                        </p>
-                        <p className="text-xl font-bold text-white">
-                          {player.name}
-                        </p>
-                        <p className="text-sm text-gray-400">
-                          {player.role}
-                        </p>
-                      </div>
+
+                      {/* Label */}
+                      <p className="text-xs text-yellow-400 tracking-widest uppercase mb-0.5 relative z-10">
+                        ★ Icon Player
+                      </p>
+
+                      {/* Name */}
+                      <h2 className="text-xl md:text-2xl font-bold text-white relative z-10">
+                        {player.name}
+                      </h2>
+
+                      {/* Role */}
+                      <p className="text-sm text-gray-400 mt-1 relative z-10">
+                        {player.role}
+                      </p>
+
                     </div>
                 ))}
 

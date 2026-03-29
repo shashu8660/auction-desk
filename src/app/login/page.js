@@ -27,7 +27,7 @@ export default function TeamLoginPage() {
     // Verify team role
     const { data: profile } = await supabase
       .from("profiles")
-      .select("role")
+      .select("role, team_ids")
       .eq("id", data.user.id)
       .single()
 
@@ -36,6 +36,9 @@ export default function TeamLoginPage() {
       await supabase.auth.signOut()
       return
     }
+
+    // store team ids for auction page
+    localStorage.setItem("team_ids", JSON.stringify(profile.team_ids || []))
 
     router.push("/auction")
   }
